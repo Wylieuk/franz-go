@@ -10,6 +10,8 @@ import (
 // LogLevel designates which level the logger should log at.
 type LogLevel int8
 
+var LogChannel = make(chan string, 100)
+
 const (
 	// LogLevelNone disables logging.
 	LogLevelNone LogLevel = iota
@@ -74,6 +76,7 @@ type basicLogger struct {
 
 func (b *basicLogger) Level() LogLevel { return b.level }
 func (b *basicLogger) Log(level LogLevel, msg string, keyvals ...any) {
+
 	buf := byteBuffers.Get().(*bytes.Buffer)
 	defer byteBuffers.Put(buf)
 
@@ -92,6 +95,10 @@ func (b *basicLogger) Log(level LogLevel, msg string, keyvals ...any) {
 		format = format[:len(format)-2] // trim trailing comma and space
 		fmt.Fprintf(buf, format, keyvals...)
 	}
+
+	go func() {
+		LogChannel <- buf.String()
+	}()
 
 	buf.WriteByte('\n')
 	b.dst.Write(buf.Bytes())
