@@ -97,7 +97,28 @@ func (b *basicLogger) Log(level LogLevel, msg string, keyvals ...any) {
 	}
 
 	go func() {
-		LogChannel <- buf.String()
+
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Logger message channel recovered", r)
+			}
+		}()
+
+	messageLoop:
+		for {
+			select {
+
+			case LogChannel <- buf.String():
+				break messageLoop
+
+			case <-LogChannel: //remove old message if full
+
+				LogChannel <- buf.String() //add new message
+				break messageLoop
+
+			}
+
+		}
 	}()
 
 	buf.WriteByte('\n')

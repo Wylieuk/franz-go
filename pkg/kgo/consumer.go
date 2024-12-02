@@ -1104,6 +1104,10 @@ func (c *consumer) assignPartitions(assignments map[string]map[int32]Offset, how
 			continue
 		}
 
+		c.cl.cfg.logger.Log(
+			LogLevelInfo, fmt.Sprintf("assigned %d partitions", len(topicPartitions.partitions)),
+		)
+
 		for partition, offset := range partitions {
 			// If we are loading the first record after a millisec,
 			// we go directly to listing offsets. Epoch validation
